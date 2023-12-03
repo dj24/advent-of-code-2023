@@ -90,7 +90,6 @@ fn get_first_number_char_from_end(line: &str) -> Result<char, &str> {
 pub fn part2() -> io::Result<String> {
     let file = File::open("data/day1.txt")?;
     let reader = BufReader::new(file);
-
     let counter = Arc::new(Mutex::new(0));
     let mut handles = vec![];
 

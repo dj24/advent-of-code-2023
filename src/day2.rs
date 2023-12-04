@@ -1,96 +1,52 @@
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
-
-struct Turn {
-    blue_count: u32,
-    red_count: u32,
-    green_count: u32,
-}
-
-impl Turn {
-    fn new() -> Turn {
-        Turn {
-            blue_count: 0,
-            red_count: 0,
-            green_count: 0,
-        }
-    }
-
-    fn add_blue(&mut self, amount: u32) {
-        self.blue_count += amount;
-    }
-
-    fn add_red(&mut self, amount: u32) {
-        self.red_count += amount;
-    }
-
-    fn add_green(&mut self, amount: u32) {
-        self.green_count += amount;
-    }
-}
-
 struct Game {
     id: u32,
-    turns: Vec<Turn>,
+    max_blue: u32,
+    max_red: u32,
+    max_green: u32,
 }
 
 impl Game {
     fn new(id: u32) -> Game {
         Game {
             id,
-            turns: Vec::new(),
-        }
-    }
-
-    fn add_turns(&mut self, turns: Vec<Turn>) {
-        for turn in turns {
-            self.turns.push(turn);
+            max_blue: 0,
+            max_red: 0,
+            max_green: 0,
         }
     }
 }
-
-// Returns array of turns or empty array if above possible limits
-fn get_turns_from_game_string(game_string: &str) -> Vec<Turn> {
-    let mut turns: Vec<Turn> = Vec::new();
-    for substr_result in game_string.split(';') {
-        let colours: Vec<&str> = substr_result.split(',').collect();
-        let mut turn = Turn::new();
-        for colour_result in colours {
-            let colour_amount = colour_result.split(' ').collect::<Vec<_>>()[1];
-            let colour_amount = colour_amount.parse::<u32>().unwrap();
-            if colour_result.contains("blue") {
-                if colour_amount > 14 {
-                    return Vec::new();
-                }
-                turn.add_blue(colour_amount);
-            }
-            else if colour_result.contains("red") {
-                if colour_amount > 12 {
-                    return Vec::new();
-                }
-                turn.add_red(colour_amount);
-            }
-            else if colour_result.contains("green") {
-                if colour_amount > 13 {
-                    return Vec::new();
-                }
-                turn.add_green(colour_amount);
-            }
-        }
-        turns.push(turn);
-    }
-    turns
-}
-
 
 fn get_game_from_line(line: &str) -> Game {
     let parts: Vec<&str> = line.split(':').collect();
     let id_string = parts[0].split(' ').collect::<Vec<_>>()[1];
     let id = id_string.parse::<u32>().unwrap();
     let mut game = Game::new(id);
-    let turns = parts[1];
-    game.add_turns(get_turns_from_game_string(turns));
+    let turns_string = parts[1];
+    for substr_result in turns_string.split(';') {
+        let colours: Vec<&str> = substr_result.split(',').collect();
+        for colour_result in colours {
+            let colour_amount = colour_result.split(' ').collect::<Vec<_>>()[1];
+            let colour_amount = colour_amount.parse::<u32>().unwrap();
+            if colour_result.contains("blue") {
+                if colour_amount > game.max_blue {
+                    game.max_blue = colour_amount;
+                }
+            }
+            else if colour_result.contains("red") {
+                if colour_amount > game.max_red {
+                    game.max_red = colour_amount;
+                }
+            }
+            else if colour_result.contains("green") {
+                if colour_amount > game.max_green {
+                    game.max_green = colour_amount;
+                }
+            }
+        }
+    }
     game
 }
 
@@ -101,9 +57,10 @@ pub fn part1() -> io::Result<String> {
     for line_result in reader.lines() {
         let line = line_result?;
         let game = get_game_from_line(&line);
-        if game.turns.len() > 0  {
-            sum += game.id;
+        if game.max_red > 12 || game.max_blue > 14 || game.max_green > 13 {
+            continue;
         }
+        sum += game.id;
     }
     Ok(sum.to_string().parse().unwrap())
 }
@@ -115,7 +72,7 @@ pub fn part2() -> io::Result<String> {
     for line_result in reader.lines() {
         let line = line_result?;
         let game = get_game_from_line(&line);
-
+        sum += game.max_blue * game.max_red * game.max_green;
     }
     Ok(sum.to_string().parse().unwrap())
 }
